@@ -5,10 +5,32 @@ use crate::progress::VideoProgressTracker;
 use crate::video_processor_utils;
 use anyhow::Result;
 use ndarray::Axis;
+use std::process::Command;
 use usls::{
     Annotator, Config, DType, DataLoader, Style, Viewer, perf,
     models::{Clip, YOLO},
 };
+
+/// Gets the total frame count from a video file using ffprobe
+fn get_video_frame_count(video_path: &str) -> Result<u64> {
+    let output = Command::new("ffprobe")
+        .args([
+            "-v", "quiet",
+            "-select_streams", "v:0",
+            "-show_entries", "stream=nb_frames",
+            "-of", "csv=p=0",
+            video_path
+        ])
+        .output()?;
+    
+    if output.status.success() {
+        let frame_count_str = String::from_utf8(output.stdout)?;
+        let frame_count = frame_count_str.trim().parse::<u64>()?;
+        Ok(frame_count)
+    } else {
+        Err(anyhow::anyhow!("Failed to get frame count from video"))
+    }
+}
 
 /// Base trait for video processors that handle cropping with different smoothing strategies
 pub trait VideoProcessor {
@@ -47,14 +69,27 @@ pub trait VideoProcessor {
             0
         };
 
-        // Create progress tracker (we'll estimate total as we go)
+        // Try to get total frame count from video file
+        let total_frames = get_video_frame_count(&args.source).ok();
+        
         println!("Video info: {:.1} FPS", frame_rate);
+        if let Some(frames) = total_frames {
+            println!("Total frames: {}", frames);
+        }
         
         // Create progress tracker
-        let mut progress_tracker = VideoProgressTracker::new_unknown_total(
-            frame_rate as f64,
-            &format!("{} detection", args.object)
-        );
+        let mut progress_tracker = if let Some(total_frames) = total_frames {
+            VideoProgressTracker::new(
+                total_frames,
+                frame_rate as f64,
+                &format!("{} detection", args.object)
+            )
+        } else {
+            VideoProgressTracker::new_unknown_total(
+                frame_rate as f64,
+                &format!("{} detection", args.object)
+            )
+        };
 
         let mut viewer = Viewer::default()
             .with_window_scale(0.5)
@@ -88,20 +123,14 @@ pub trait VideoProcessor {
             for (image, detection) in images.iter().zip(detections.iter()) {
                 // Update progress for each frame
                 progress_tracker.update_frame();
-                let img = if !args.headless {
-                    annotator.annotate(image, detection)?
-                } else {
-                    image.clone()
-                };
-
-                // Calculate crop areas based on the detection results
+                // Calculate crop areas based on the detection results first
                 let objects = video_processor_utils::extract_objects_above_threshold(
                     detection,
                     &args.object,
                     args.object_prob_threshold,
                     args.object_area_threshold,
-                    img.width() as f32,
-                    img.height() as f32,
+                    image.width() as f32,
+                    image.height() as f32,
                 );
 
                 let is_graphic = if objects.len() == 0 && args.keep_graphic {
@@ -130,15 +159,21 @@ pub trait VideoProcessor {
                 let latest_crop = crop::calculate_crop_area(
                     args.use_stack_crop,
                     is_graphic,
-                    img.width() as f32,
-                    img.height() as f32,
+                    image.width() as f32,
+                    image.height() as f32,
                     &objects,
                 )?;
 
                 // Print debug information
                 self.print_debug_info(&objects, &latest_crop, is_graphic);
 
+                // Create img only when needed (avoid unnecessary clone)
                 if smooth_duration_frames > 0 {
+                    let img = if !args.headless {
+                        annotator.annotate(image, detection)?
+                    } else {
+                        image.clone()
+                    };
                     self.process_frame_with_smoothing(
                         &img,
                         &latest_crop,
@@ -148,6 +183,11 @@ pub trait VideoProcessor {
                         smooth_duration_frames,
                     )?;
                 } else {
+                    let img = if !args.headless {
+                        annotator.annotate(image, detection)?
+                    } else {
+                        image.clone()
+                    };
                     video_processor_utils::process_and_display_crop(
                         &img,
                         &latest_crop,

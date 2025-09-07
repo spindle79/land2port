@@ -88,10 +88,11 @@ pub fn create_cropped_image(
     match crop_result {
         CropResult::Single(crop) => {
             // For a single crop, crop the image to the specified area
-            let x = crop.x as u32;
-            let y = crop.y as u32;
-            let width = crop.width as u32;
-            let height = crop.height as u32;
+            // Ensure even dimensions for video encoding compatibility
+            let x = (crop.x as u32) & !1; // Make even
+            let y = (crop.y as u32) & !1; // Make even
+            let width = (crop.width as u32) & !1; // Make even
+            let height = (crop.height as u32) & !1; // Make even
 
             // Use imageops::crop to get the cropped region
             let cropped = image::imageops::crop(&mut rgb_image, x, y, width, height).to_image();
@@ -101,7 +102,7 @@ pub fn create_cropped_image(
                 resize(
                     &cropped,
                     target_width,
-                    (target_width as f32 * (height as f32 / width as f32)) as u32,
+                    ((target_width as f32 * (height as f32 / width as f32)) as u32) & !1, // Ensure even height
                     image::imageops::FilterType::Lanczos3,
                 )
             } else {
@@ -109,7 +110,7 @@ pub fn create_cropped_image(
             };
 
             // Create a new image with 9:16 aspect ratio and black background
-            let output_height = (target_width as f32 * (16.0 / 9.0)) as u32;
+            let output_height = ((target_width as f32 * (16.0 / 9.0)) as u32) & !1; // Ensure even height
             let mut result = RgbImage::new(target_width, output_height);
 
             // Calculate y offset (1/16 of the height)
@@ -128,21 +129,22 @@ pub fn create_cropped_image(
             // 3. Stacking them vertically to create the final 9:16 image
 
             // Crop both areas from the source image
+            // Ensure even dimensions for video encoding compatibility
             let crop1_img = image::imageops::crop(
                 &mut rgb_image,
-                crop1.x as u32,
-                crop1.y as u32,
-                crop1.width as u32,
-                crop1.height as u32,
+                (crop1.x as u32) & !1, // Make even
+                (crop1.y as u32) & !1, // Make even
+                (crop1.width as u32) & !1, // Make even
+                (crop1.height as u32) & !1, // Make even
             )
             .to_image();
 
             let crop2_img = image::imageops::crop(
                 &mut rgb_image,
-                crop2.x as u32,
-                crop2.y as u32,
-                crop2.width as u32,
-                crop2.height as u32,
+                (crop2.x as u32) & !1, // Make even
+                (crop2.y as u32) & !1, // Make even
+                (crop2.width as u32) & !1, // Make even
+                (crop2.height as u32) & !1, // Make even
             )
             .to_image();
 
@@ -196,10 +198,11 @@ pub fn create_cropped_image(
         CropResult::Resize(crop) => {
             // For resize, we want to resize the entire frame to the target width
             // The crop area should cover the entire frame (x=0, y=0, width=frame_width, height=frame_height)
-            let x = crop.x as u32;
-            let y = crop.y as u32;
-            let width = crop.width as u32;
-            let height = crop.height as u32;
+            // Ensure even dimensions for video encoding compatibility
+            let x = (crop.x as u32) & !1; // Make even
+            let y = (crop.y as u32) & !1; // Make even
+            let width = (crop.width as u32) & !1; // Make even
+            let height = (crop.height as u32) & !1; // Make even
 
             // Use imageops::crop to get the cropped region (should be the entire frame)
             let cropped = image::imageops::crop(&mut rgb_image, x, y, width, height).to_image();
@@ -209,7 +212,7 @@ pub fn create_cropped_image(
                 resize(
                     &cropped,
                     target_width,
-                    (target_width as f32 * (height as f32 / width as f32)) as u32,
+                    ((target_width as f32 * (height as f32 / width as f32)) as u32) & !1, // Ensure even height
                     image::imageops::FilterType::Lanczos3,
                 )
             } else {
@@ -217,7 +220,7 @@ pub fn create_cropped_image(
             };
 
             // Create a new image with 9:16 aspect ratio and black background
-            let output_height = (target_width as f32 * (16.0 / 9.0)) as u32;
+            let output_height = ((target_width as f32 * (16.0 / 9.0)) as u32) & !1; // Ensure even height
             let mut result = RgbImage::new(target_width, output_height);
 
             // Calculate y offset (1/8 of the height)

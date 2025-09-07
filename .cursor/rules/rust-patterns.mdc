@@ -47,3 +47,11 @@ let result = some_operation()
 - Test both success and failure cases
 - Use descriptive test names
 - Test edge cases and boundary conditions
+
+## Development Workflow
+- **ALWAYS run `cargo check` before testing or running code**
+- **ALWAYS run `cargo build --release` before performance testing**
+- Fix all compilation errors and warnings before proceeding
+- Use `read_lints` tool to check for linting issues in modified files
+- Ensure code compiles cleanly before committing changes
+- Address unused code warnings by either using the code or removing it

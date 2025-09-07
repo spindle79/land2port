@@ -48,3 +48,19 @@
 - Include examples in documentation when helpful
 - Document all public functions, structs, and traits
 - Use `# Arguments`, `# Returns`, and `# Examples` sections
+
+## Development Workflow
+- **CRITICAL: ALWAYS run `cargo check` before testing or running code**
+- **CRITICAL: ALWAYS run `cargo build --release` before performance testing**
+- Fix all compilation errors and warnings before proceeding
+- Use `read_lints` tool to check for linting issues in modified files
+- Ensure code compiles cleanly before committing changes
+- Address unused code warnings by either using the code or removing it
+
+## Progress Tracking
+- Use `VideoProgressTracker` for comprehensive progress reporting
+- Display total frames, current position, remaining time, and processing speed
+- Calculate accurate ETA based on current processing rate and remaining frames
+- Use ffprobe to get total frame count for accurate progress tracking
+- Format time displays as `h:mm:ss` for readability
+- Show progress bar with percentage completion when total frames are known
