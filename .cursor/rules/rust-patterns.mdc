@@ -1,0 +1,49 @@
+---
+description: Core Rust coding patterns and conventions for Land2Port
+globs: ["**/*.rs"]
+alwaysApply: true
+---
+
+# Rust Coding Patterns for Land2Port
+
+## Error Handling
+- Use `anyhow::Result<T>` for error propagation throughout the codebase
+- Use `anyhow::Context` for adding context to errors
+- Use `map_err` with descriptive error messages
+- Prefer `?` operator for error propagation
+
+```rust
+// Example pattern
+let result = some_operation()
+    .map_err(|e| anyhow!("Failed to perform operation: {}", e))?;
+```
+
+## Async Programming
+- Use `#[tokio::main]` for main function
+- Use `async fn` for I/O operations
+- Use `.await?` for async error handling
+- Prefer async/await over manual Future handling
+
+## Struct and Trait Design
+- Use `#[derive(Debug, Clone, PartialEq)]` for data structures
+- Implement `Default` trait for configuration structs
+- Use trait objects for polymorphic behavior (e.g., `VideoProcessor` trait)
+- Prefer composition over inheritance
+
+## Resource Management
+- Use `Option<T>` for optional resources
+- Implement proper cleanup in `Drop` trait when needed
+- Use RAII patterns for resource management
+- Prefer borrowing over ownership when possible
+
+## Documentation Standards
+- Use `///` for public API documentation
+- Include examples in documentation when helpful
+- Document all public functions, structs, and traits
+- Use `# Arguments`, `# Returns`, and `# Examples` sections
+
+## Testing Patterns
+- Use `#[cfg(test)]` modules for unit tests
+- Test both success and failure cases
+- Use descriptive test names
+- Test edge cases and boundary conditions

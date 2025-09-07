@@ -4,7 +4,7 @@ A powerful video processing tool that automatically detects objects like faces o
 
 ## Features
 
-- **🎯 Object Detection**: Uses YOLO models to detect faces, heads, footballs, sports balls, frisbees, persons, cars, trucks, or boats in video frames with high accuracy
+- **🎯 Object Detection**: Uses YOLO models to detect faces, heads, footballs, sports balls, frisbees, persons, cars, trucks, motorcycles, or boats in video frames with high accuracy
 - **📱 Portrait Cropping**: Automatically crops videos to 9:16 aspect ratio for mobile viewing
 - **🎬 Smart Cropping Logic**: 
   - Single object: Centers crop on the detected object
@@ -50,12 +50,32 @@ cd land2port
 cargo build --release
 ```
 
+### Project Structure
+
+After building, your project structure will look like this:
+
+```
+land2port/
+├── src/                    # Source code
+├── model/                  # YOLO model files
+├── video/                  # Input videos folder
+│   └── README.md          # Video folder documentation
+├── runs/                   # Output directory (created automatically)
+├── .cursor/rules/          # Cursor Rules for AI assistance
+├── AGENTS.md              # AI assistance instructions
+├── Cargo.toml             # Rust project configuration
+└── README.md              # This file
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
-# Process a video with default settings
+# Process a video with default settings (uses ./video/video1.mp4 by default)
+cargo run --release
+
+# Process a specific video from the video folder
 cargo run --release -- --source ./video/input.mp4
 
 # Process with headless mode (no GUI)
@@ -94,9 +114,9 @@ cargo run --release -- \
 - `--output-filepath <FILE>`: Output filepath for the final video (default: empty string, video stays in timestamped output directory)
 
 #### Object Detection
-- `--object <TYPE>`: Object type to detect - `face`, `head`, `ball`, `sports ball`, `frisbee`, `person`, `car`, `truck`, or `boat` (default: `face`)
+- `--object <TYPE>`: Object type to detect - `face`, `head`, `ball`, `sports ball`, `frisbee`, `person`, `car`, `truck`, `motorcycle`, or `boat` (default: `face`)
 - `--object-prob-threshold <FLOAT>`: Threshold where object gets included in crop logic (default: `0.7`)
-- `--object-area-threshold <FLOAT>`: Minimum object area as percentage of frame (0.01 = 1%, ignored for ball objects) (default: `0.01`)
+- `--object-area-threshold <FLOAT>`: Minimum object area as percentage of frame (0.01 = 1%, ignored for ball objects) (default: `0.02`)
 
 #### Model Configuration
 - `--device <DEVICE>`: Processing device - `cpu:0`, `cuda:0`, `coreml` (default: `cpu:0`)
@@ -135,6 +155,7 @@ Use the `--object` param to select which type of object to detect. Current optio
 - **frisbee**: Detects frisbees
 - **car**: Detects cars
 - **truck**: Detects trucks
+- **motorcycle**: Detects motorcycles
 - **boat**: Detects boats
 
 ### 2. Crop Calculation
@@ -201,6 +222,32 @@ Without `--add-captions`, only `processed_video.mp4` is created.
 
 ## Configuration
 
+### Video Input Folder
+
+The `video/` folder is where you place your input videos for processing. This folder includes:
+
+- **Default location**: Place your videos in `./video/` directory
+- **Default file**: The tool looks for `./video/video1.mp4` by default
+- **Organization**: You can create subdirectories to organize your videos
+- **Documentation**: See `video/README.md` for detailed usage instructions
+
+#### Supported Video Formats
+- MP4, MOV, AVI, MKV, WebM
+- Most formats supported by ffmpeg
+
+#### Example Video Organization
+```
+video/
+├── interviews/
+│   ├── interview_1.mp4
+│   └── interview_2.mp4
+├── sports/
+│   ├── football_match.mp4
+│   └── basketball_game.mp4
+└── presentations/
+    └── demo_video.mp4
+```
+
 ### Environment Variables
 
 Set your OpenAI API key for transcription:
@@ -235,9 +282,21 @@ The tool automatically selects the appropriate model based on the `--object`, `-
 - `yolov8m-football.onnx` (v8 medium)
 
 #### Other Objects
-For other objects like `person`, `car`, `truck`, `boat`, `sports ball`, `frisbee`, the tool downloads the standard COCO-80 yolo model with class filtering.
+For other objects like `person`, `car`, `truck`, `motorcycle`, `boat`, `sports ball`, `frisbee`, the tool downloads the standard COCO-80 yolo model with class filtering.
 
 ## Examples
+
+### Using the Video Folder
+
+```bash
+# Place your video in the video folder and process it
+# 1. Copy your video to ./video/interview.mp4
+# 2. Process it:
+cargo run --release -- \
+  --source ./video/interview.mp4 \
+  --object face \
+  --headless
+```
 
 ### Convert a landscape interview to portrait
 ```bash
@@ -245,7 +304,7 @@ cargo run --release -- \
   --object face \
   --ver 11.0 \
   --scale s \
-  --source interview.mp4 \
+  --source ./video/interview.mp4 \
   --headless \
   --smooth-percentage 5.0 \
   --smooth-duration 2.0
@@ -257,7 +316,7 @@ cargo run --release -- \
   --object face \
   --ver 11.0 \
   --scale s \
-  --source group_shot.mp4 \
+  --source ./video/group_shot.mp4 \
   --headless \
   --use-stack-crop \
   --smooth-percentage 8.0
@@ -269,7 +328,7 @@ cargo run --release -- \
   --object face \
   --ver 11.0 \
   --scale s \
-  --source three_person.mp4 \
+  --source ./video/three_person.mp4 \
   --headless \
   --use-stack-crop \
   --smooth-percentage 8.0
@@ -282,7 +341,7 @@ cargo run --release -- \
   --object face \
   --ver 11.0 \
   --scale l \
-  --source high_quality.mp4 \
+  --source ./video/high_quality.mp4 \
   --device cuda:0 \
   --headless
 ```
@@ -293,7 +352,7 @@ cargo run --release -- \
   --object ball \
   --ver 8.0 \
   --scale m \
-  --source football_match.mp4 \
+  --source ./video/football_match.mp4 \
   --headless
 ```
 
@@ -301,15 +360,23 @@ cargo run --release -- \
 ```bash
 cargo run --release -- \
   --object head \
-  --source interview.mp4 \
+  --source ./video/interview.mp4 \
   --headless
 ```
 
-### Detect other objects (person, car, etc.)
+### Detect other objects (person, car, motorcycle, etc.)
 ```bash
 cargo run --release -- \
   --object person \
-  --source street_scene.mp4 \
+  --source ./video/street_scene.mp4 \
+  --headless
+```
+
+### Detect motorcycles
+```bash
+cargo run --release -- \
+  --object motorcycle \
+  --source ./video/motorcycle_race.mp4 \
   --headless
 ```
 
@@ -317,7 +384,7 @@ cargo run --release -- \
 ```bash
 cargo run --release -- \
   --object face \
-  --source presentation.mp4 \
+  --source ./video/presentation.mp4 \
   --headless \
   --cut-similarity 0.2 \
   --cut-start 0.6 \
@@ -329,7 +396,7 @@ cargo run --release -- \
 ```bash
 cargo run --release -- \
   --object face \
-  --source input.mp4 \
+  --source ./video/input.mp4 \
   --headless \
   --output-filepath ./my_custom_output.mp4
 ```
@@ -338,7 +405,7 @@ cargo run --release -- \
 ```bash
 cargo run --release -- \
   --object face \
-  --source video.mp4 \
+  --source ./video/video.mp4 \
   --headless \
   --use-simple-smoothing \
   --smooth-percentage 15.0
@@ -375,10 +442,25 @@ This project uses the following key dependencies:
 
 Run with verbose output to debug issues:
 ```bash
-RUST_LOG=debug cargo run --release -- --source video.mp4
+RUST_LOG=debug cargo run --release -- --source ./video/video.mp4
 ```
 
-## Contributing
+## Development
+
+### Cursor Rules
+This project includes Cursor Rules for AI-assisted development:
+
+- **`.cursor/rules/`** - Project-specific rules for different aspects of the codebase
+- **`AGENTS.md`** - Simple markdown instructions for AI assistance
+
+The rules provide context-aware guidance for:
+- Rust coding patterns and conventions
+- Video processing and YOLO integration
+- CLI configuration and argument parsing
+- Audio processing and OpenAI integration
+- Project structure and organization
+
+### Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 

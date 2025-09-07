@@ -1,0 +1,43 @@
+---
+description: Project organization and module structure guidelines
+globs: ["src/**/*.rs"]
+alwaysApply: true
+---
+
+# Project Structure and Organization
+
+## Module Organization
+- Keep related functionality in dedicated modules
+- Use clear, descriptive module names
+- Separate concerns (video processing, audio, configuration, etc.)
+- Use `mod` declarations in main.rs for module organization
+
+## File Naming Conventions
+- Use `snake_case` for file names
+- Use descriptive names that reflect functionality
+- Group related files with consistent naming patterns
+- Use appropriate suffixes for different types of modules
+
+## Import Organization
+- Group imports by type (std, external crates, internal modules)
+- Use absolute imports for clarity
+- Keep imports organized and minimal
+- Use `use` statements at the top of files
+
+## Code Organization
+- Keep functions focused and single-purpose
+- Use appropriate abstraction levels
+- Separate business logic from I/O operations
+- Use traits for polymorphic behavior
+
+## Testing Organization
+- Use `#[cfg(test)]` modules within source files
+- Test both success and failure cases
+- Use descriptive test names
+- Test edge cases and boundary conditions
+
+## Documentation Organization
+- Use comprehensive documentation for public APIs
+- Include examples in documentation
+- Document all public functions, structs, and traits
+- Use consistent documentation format

@@ -1,0 +1,37 @@
+---
+description: Audio processing and OpenAI transcription integration
+globs: ["src/audio.rs", "src/transcript.rs"]
+alwaysApply: false
+---
+
+# Audio Processing and Transcription Patterns
+
+## Audio Processing
+- Use `std::process::Command` for ffmpeg operations
+- Implement proper error handling for external tool failures
+- Provide clear error messages for missing dependencies
+- Use structured configuration for audio processing options
+
+## OpenAI Integration
+- Use async HTTP clients for API calls
+- Implement proper timeout handling
+- Use structured error handling for API responses
+- Handle API key configuration through environment variables
+
+## Caption Styling
+- Use structured configuration objects for caption appearance
+- Provide sensible defaults for all styling options
+- Support comprehensive styling options (fonts, colors, positioning)
+- Use proper error handling for styling configuration
+
+## File Operations
+- Use `std::fs` for file operations
+- Create directories as needed with `create_dir_all`
+- Use proper path handling with `std::path::Path`
+- Implement proper cleanup of temporary files
+
+## Error Handling
+- Use `anyhow::Context` for adding context to errors
+- Provide descriptive error messages for all operations
+- Handle both success and failure cases appropriately
+- Use proper error propagation with `?` operator
