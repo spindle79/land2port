@@ -88,20 +88,14 @@ pub trait VideoProcessor {
             for (image, detection) in images.iter().zip(detections.iter()) {
                 // Update progress for each frame
                 progress_tracker.update_frame();
-                let img = if !args.headless {
-                    annotator.annotate(image, detection)?
-                } else {
-                    image.clone()
-                };
-
-                // Calculate crop areas based on the detection results
+                // Calculate crop areas based on the detection results first
                 let objects = video_processor_utils::extract_objects_above_threshold(
                     detection,
                     &args.object,
                     args.object_prob_threshold,
                     args.object_area_threshold,
-                    img.width() as f32,
-                    img.height() as f32,
+                    image.width() as f32,
+                    image.height() as f32,
                 );
 
                 let is_graphic = if objects.len() == 0 && args.keep_graphic {
@@ -130,15 +124,21 @@ pub trait VideoProcessor {
                 let latest_crop = crop::calculate_crop_area(
                     args.use_stack_crop,
                     is_graphic,
-                    img.width() as f32,
-                    img.height() as f32,
+                    image.width() as f32,
+                    image.height() as f32,
                     &objects,
                 )?;
 
                 // Print debug information
                 self.print_debug_info(&objects, &latest_crop, is_graphic);
 
+                // Create img only when needed (avoid unnecessary clone)
                 if smooth_duration_frames > 0 {
+                    let img = if !args.headless {
+                        annotator.annotate(image, detection)?
+                    } else {
+                        image.clone()
+                    };
                     self.process_frame_with_smoothing(
                         &img,
                         &latest_crop,
@@ -148,6 +148,11 @@ pub trait VideoProcessor {
                         smooth_duration_frames,
                     )?;
                 } else {
+                    let img = if !args.headless {
+                        annotator.annotate(image, detection)?
+                    } else {
+                        image.clone()
+                    };
                     video_processor_utils::process_and_display_crop(
                         &img,
                         &latest_crop,

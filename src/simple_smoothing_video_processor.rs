@@ -30,8 +30,8 @@ impl VideoProcessor for SimpleSmoothingVideoProcessor {
         viewer: &mut Viewer,
         _smooth_duration_frames: usize,
     ) -> Result<()> {
-        // Compare with previous crop if it exists
-        let crop_result = if let Some(prev_crop) = &self.previous_crop {
+        // Compare with previous crop if it exists and determine which crop to use
+        let (crop_result, should_use_previous) = if let Some(prev_crop) = &self.previous_crop {
             let is_latest_crop_similar = crop::is_crop_similar(
                 latest_crop,
                 prev_crop,
@@ -41,17 +41,22 @@ impl VideoProcessor for SimpleSmoothingVideoProcessor {
 
             if is_latest_crop_similar {
                 video_processor_utils::debug_println(format_args!("Using previous crop (similar)"));
-                prev_crop.clone()
+                (prev_crop.clone(), true)
             } else {
                 video_processor_utils::debug_println(format_args!("Using latest crop (not similar)"));
-                latest_crop.clone()
+                (latest_crop.clone(), false)
             }
         } else {
             video_processor_utils::debug_println(format_args!("No previous crop, using latest crop"));
-            latest_crop.clone()
+            (latest_crop.clone(), false)
         };
 
-        self.previous_crop = Some(crop_result.clone());
+        // Store the crop result for next frame (avoid double clone by reusing if we used previous)
+        if should_use_previous {
+            // We already have prev_crop stored, no need to clone again
+        } else {
+            self.previous_crop = Some(crop_result.clone());
+        }
 
         // Process and display the chosen crop
         video_processor_utils::process_and_display_crop(img, &crop_result, viewer, args.headless)?;

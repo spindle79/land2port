@@ -51,17 +51,17 @@ impl VideoProcessor for BallVideoProcessor {
             true
         };
 
-        // Update most_recent_image for next frame
+        // Update most_recent_image for next frame (need to clone for storage)
         self.most_recent_image = Some(img.clone());
 
         // Apply the ball-specific algorithm
-        let crop_result = if is_cut {
+        let (crop_result, needs_storage) = if is_cut {
             // If there was a cut, use latest_crop
             video_processor_utils::debug_println(format_args!("Cut detected, using latest ball crop"));
             self.hbb_three_frames_ago = None;
             self.hbb_two_frames_ago = None;
             self.hbb_last_frame = None;
-            latest_crop.clone()
+            (latest_crop.clone(), true)
         } else {
             // If no cut, check ball count
             if current_ball_count > 0 {
@@ -100,14 +100,14 @@ impl VideoProcessor for BallVideoProcessor {
                         highest_confidence_ball.height(),
                     ));
 
-                    single_ball_crop
+                    (single_ball_crop, true)
                 } else {
                     // Single ball detected, use latest_crop
                     video_processor_utils::debug_println(format_args!("No cut, single ball detected, using latest ball crop"));
                     self.hbb_three_frames_ago = self.hbb_two_frames_ago.take();
                     self.hbb_two_frames_ago = self.hbb_last_frame.take();
                     self.hbb_last_frame = Some(objects[0].clone());
-                    latest_crop.clone()
+                    (latest_crop.clone(), true)
                 }
             } else {
                 // If no balls detected, try to predict position or use previous crop
@@ -123,7 +123,7 @@ impl VideoProcessor for BallVideoProcessor {
                     self.hbb_three_frames_ago = self.hbb_two_frames_ago.take();
                     self.hbb_two_frames_ago = self.hbb_last_frame.take();
                     self.hbb_last_frame = Some(current_hbb);
-                    current_crop
+                    (current_crop, true)
                 } else {
                     // Not enough history for prediction, use previous crop
                     self.hbb_three_frames_ago = self.hbb_two_frames_ago.take();
@@ -131,17 +131,19 @@ impl VideoProcessor for BallVideoProcessor {
                     self.hbb_last_frame = None;
                     if let Some(prev_crop) = &self.previous_crop {
                         video_processor_utils::debug_println(format_args!("No cut, no balls detected, insufficient history, using previous ball crop"));
-                        prev_crop.clone()
+                        (prev_crop.clone(), false) // Don't need to store, already stored
                     } else {
                         video_processor_utils::debug_println(format_args!("No cut, no balls detected, insufficient history, no previous crop, using latest crop"));
-                        latest_crop.clone()
+                        (latest_crop.clone(), true)
                     }
                 }
             }
         };
 
-        // Update previous crop
-        self.previous_crop = Some(crop_result.clone());
+        // Update previous crop only if needed (avoid double clone)
+        if needs_storage {
+            self.previous_crop = Some(crop_result.clone());
+        }
 
         // Process and display the chosen crop
         video_processor_utils::process_and_display_crop(img, &crop_result, viewer, args.headless)?;
