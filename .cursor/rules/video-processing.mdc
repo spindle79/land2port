@@ -35,3 +35,12 @@ alwaysApply: false
 - Track object detection history for prediction
 - Use cut detection to reset state when appropriate
 - Handle frame-to-frame consistency properly
+
+## Progress Display and User Experience
+- Use `VideoProgressTracker` for comprehensive progress reporting
+- Display total frames, current position, remaining time, and processing speed
+- Calculate accurate ETA based on current processing rate and remaining frames
+- Show video duration, processing time, and average FPS on completion
+- Use ffprobe to get total frame count for accurate progress tracking
+- Format time displays as `h:mm:ss` for readability
+- Display progress bar with percentage completion when total frames are known

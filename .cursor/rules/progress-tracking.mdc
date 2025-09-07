@@ -1,0 +1,49 @@
+---
+description: Progress tracking and user experience patterns
+globs: ["src/progress.rs", "src/video_processor.rs"]
+alwaysApply: false
+---
+
+# Progress Tracking and User Experience
+
+## Progress Display Requirements
+- **Show comprehensive progress information**: current time, total duration, remaining time, processing speed, and ETA
+- **Use accurate ETA calculation**: remaining frames ÷ current processing rate = remaining time
+- **Display processing speed as FPS**: frames per second, not time duration
+- **Format time consistently**: use `h:mm:ss` format for all time displays
+- **Show progress bar with percentage**: when total frames are known
+
+## Progress Message Format
+```
+[elapsed_time] [progress_bar] current/total frames (percentage%) | current_time | Total: total_duration | Remaining: remaining_duration | Speed: X.X fps | ETA: remaining_time
+```
+
+Example:
+```
+[00:01:24] [########################################] 52/62 frames (84%) | 0:01 | Total: 0:02 | Remaining: 0:00 | Speed: 0.6 fps | ETA: 0:17
+```
+
+## Frame Count Detection
+- Use `ffprobe` to get total frame count from video files
+- Command: `ffprobe -v quiet -select_streams v:0 -show_entries stream=nb_frames -of csv=p=0 <video_file>`
+- Fall back to unknown total mode if frame count detection fails
+- Display total frame count in startup information
+
+## VideoProcessor Integration
+- Get total frame count before creating progress tracker
+- Use `VideoProgressTracker::new()` when total frames are known
+- Use `VideoProgressTracker::new_unknown_total()` as fallback
+- Update progress after each frame is processed
+- Show completion summary with total processing time and average FPS
+
+## Error Handling
+- Handle ffprobe command failures gracefully
+- Continue processing even if frame count detection fails
+- Provide meaningful error messages for progress tracking issues
+- Don't let progress tracking errors stop video processing
+
+## Performance Considerations
+- Minimize overhead of progress updates
+- Use efficient string formatting for progress messages
+- Cache calculated values when possible
+- Update progress display at reasonable intervals (not every single operation)

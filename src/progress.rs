@@ -59,10 +59,8 @@ impl VideoProgressTracker {
         self.processed_frames += 1;
         self.progress_bar.inc(1);
         
-        // Update message with current time and ETA
-        let current_time = self.get_current_time();
-        let eta = self.get_eta();
-        let msg = format!("{} | ETA: {}", current_time, eta);
+        // Update message with comprehensive progress info
+        let msg = self.get_progress_message();
         self.progress_bar.set_message(msg);
     }
 
@@ -71,10 +69,8 @@ impl VideoProgressTracker {
         self.processed_frames += frames;
         self.progress_bar.inc(frames);
         
-        // Update message with current time and ETA
-        let current_time = self.get_current_time();
-        let eta = self.get_eta();
-        let msg = format!("{} | ETA: {}", current_time, eta);
+        // Update message with comprehensive progress info
+        let msg = self.get_progress_message();
         self.progress_bar.set_message(msg);
     }
 
@@ -84,8 +80,48 @@ impl VideoProgressTracker {
         format_duration(current_seconds)
     }
 
-    /// Gets the estimated time remaining (ETA)
-    fn get_eta(&self) -> String {
+    /// Gets comprehensive progress message
+    fn get_progress_message(&self) -> String {
+        if self.processed_frames == 0 {
+            return "Starting...".to_string();
+        }
+
+        let elapsed = self.start_time.elapsed();
+        let current_fps = self.processed_frames as f64 / elapsed.as_secs_f64();
+        let current_time = self.get_current_time();
+        
+        if let Some(total_frames) = self.total_frames {
+            // Known total frames - show complete progress
+            let total_video_time = format_duration((total_frames as f64) / self.frame_rate);
+            let remaining_frames = total_frames - self.processed_frames;
+            let eta = if current_fps > 0.0 {
+                let remaining_seconds = remaining_frames as f64 / current_fps;
+                format_duration(remaining_seconds)
+            } else {
+                "Calculating...".to_string()
+            };
+            
+            format!(
+                "{} | Total: {} | Remaining: {} | Speed: {:.1} fps | ETA: {}",
+                current_time,
+                total_video_time,
+                format_duration((remaining_frames as f64) / self.frame_rate),
+                current_fps,
+                eta
+            )
+        } else {
+            // Unknown total - show what we can
+            format!(
+                "{} | Speed: {:.1} fps | ETA: {}",
+                current_time,
+                current_fps,
+                self.get_eta_unknown_total()
+            )
+        }
+    }
+
+    /// Gets the estimated time remaining (ETA) for unknown total
+    fn get_eta_unknown_total(&self) -> String {
         if self.processed_frames == 0 {
             return "Calculating...".to_string();
         }
@@ -94,14 +130,8 @@ impl VideoProgressTracker {
         let frames_per_second = self.processed_frames as f64 / elapsed.as_secs_f64();
         
         if frames_per_second > 0.0 {
-            if let Some(total_frames) = self.total_frames {
-                let remaining_frames = total_frames - self.processed_frames;
-                let remaining_seconds = remaining_frames as f64 / frames_per_second;
-                format_duration(remaining_seconds)
-            } else {
-                // For unknown total, show processing rate
-                format!("{:.1} fps", frames_per_second)
-            }
+            // For unknown total, we can't calculate ETA, so show processing rate
+            format!("{:.1} fps", frames_per_second)
         } else {
             "Calculating...".to_string()
         }
@@ -180,7 +210,7 @@ mod tests {
     #[test]
     fn test_progress_tracker_creation() {
         let tracker = VideoProgressTracker::new(1000, 30.0, "test video");
-        assert_eq!(tracker.total_frames(), 1000);
+        assert_eq!(tracker.total_frames(), Some(1000));
         assert_eq!(tracker.frame_rate(), 30.0);
         assert_eq!(tracker.processed_frames(), 0);
     }
