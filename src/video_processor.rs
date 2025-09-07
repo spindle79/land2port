@@ -1,6 +1,7 @@
 use crate::cli::Args;
 use crate::config;
 use crate::crop;
+use crate::progress::VideoProgressTracker;
 use crate::video_processor_utils;
 use anyhow::Result;
 use ndarray::Axis;
@@ -46,6 +47,15 @@ pub trait VideoProcessor {
             0
         };
 
+        // Create progress tracker (we'll estimate total as we go)
+        println!("Video info: {:.1} FPS", frame_rate);
+        
+        // Create progress tracker
+        let mut progress_tracker = VideoProgressTracker::new_unknown_total(
+            frame_rate as f64,
+            &format!("{} detection", args.object)
+        );
+
         let mut viewer = Viewer::default()
             .with_window_scale(0.5)
             .with_fps(frame_rate as usize)
@@ -76,6 +86,8 @@ pub trait VideoProcessor {
             let detections = model.forward(&images)?;
 
             for (image, detection) in images.iter().zip(detections.iter()) {
+                // Update progress for each frame
+                progress_tracker.update_frame();
                 let img = if !args.headless {
                     annotator.annotate(image, detection)?
                 } else {
@@ -147,6 +159,9 @@ pub trait VideoProcessor {
         }
         self.finalize_processing(args, &mut viewer)?;
         viewer.finalize_video()?;
+
+        // Finish progress tracking
+        progress_tracker.finish();
 
         perf(false);
 

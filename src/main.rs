@@ -11,6 +11,7 @@ mod config;
 mod crop;
 mod history;
 mod image;
+mod progress;
 mod transcript;
 mod history_smoothing_video_processor;
 mod simple_smoothing_video_processor;
@@ -45,12 +46,14 @@ async fn main() -> Result<()> {
         let srt_path = format!("{}/transcript.srt", output_dir);
 
         // Extract audio from the source video
+        println!("Extracting audio from video...");
         audio::extract_audio(&args.source, &extracted_audio)?;
-        println!("Audio extracted successfully to: {}", extracted_audio);
+        println!("✓ Audio extracted successfully to: {}", extracted_audio);
 
         // Compress the extracted audio to MP3
+        println!("Compressing audio to MP3...");
         audio::compress_to_mp3(&extracted_audio, &compressed_audio)?;
-        println!("Audio compressed to MP3: {}", compressed_audio);
+        println!("✓ Audio compressed to MP3: {}", compressed_audio);
 
         // Transcribe audio
         println!("Transcribing audio to: {}", srt_path);
@@ -61,7 +64,7 @@ async fn main() -> Result<()> {
             &transcript_config,
         )
         .await?;
-        println!("Transcription completed successfully");
+        println!("✓ Transcription completed successfully");
 
         (Some(extracted_audio), Some(srt_path))
     } else {
@@ -70,6 +73,7 @@ async fn main() -> Result<()> {
 
 
     // Choose processor based on object type and smoothing preference
+    println!("Starting video processing...");
     if args.object == "ball" {
         let mut processor = ball_video_processor::BallVideoProcessor::new(&args);
         processor.process_video(&args, &processed_video)?;
@@ -80,6 +84,7 @@ async fn main() -> Result<()> {
         let mut processor = history_smoothing_video_processor::HistorySmoothingVideoProcessor::new(&args);
         processor.process_video(&args, &processed_video)?;
     }
+    println!("✓ Video processing completed");
 
 
     if args.add_captions {
@@ -95,13 +100,13 @@ async fn main() -> Result<()> {
             &captioned_video,
             Some(caption_style),
         )?;
-        println!("Captions burned successfully");
+        println!("✓ Captions burned successfully");
 
         // Add audio to the final video
         println!("Adding audio to video...");
         audio::combine_video_audio(&captioned_video, &extracted_audio.as_ref().unwrap(), &final_video)?;
         println!(
-            "Audio added successfully. Final video saved to: {}",
+            "✓ Audio added successfully. Final video saved to: {}",
             final_video
         );
 
@@ -109,16 +114,16 @@ async fn main() -> Result<()> {
         if !args.output_filepath.is_empty() {
             println!("Copying final video to: {}", args.output_filepath);
             fs::copy(&final_video, &args.output_filepath)?;
-            println!("Final video copied successfully to: {}", args.output_filepath);
+            println!("✓ Final video copied successfully to: {}", args.output_filepath);
         }
     } else {
-        println!("Processed video saved to: {}", processed_video);
+        println!("✓ Processed video saved to: {}", processed_video);
         
         // Copy processed video to output_filepath if specified
         if !args.output_filepath.is_empty() {
             println!("Copying processed video to: {}", args.output_filepath);
             fs::copy(&processed_video, &args.output_filepath)?;
-            println!("Processed video copied successfully to: {}", args.output_filepath);
+            println!("✓ Processed video copied successfully to: {}", args.output_filepath);
         }
     }
 
