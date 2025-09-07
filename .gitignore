@@ -1,6 +1,9 @@
 /target
 /usls
 /runs/
-/video/
 /runs/*.mov
 .DS_Store
+
+# Video folder - ignore all files but keep the folder structure
+/video/*
+!/video/README.md

@@ -1,0 +1,45 @@
+---
+description: CLI configuration and argument parsing patterns
+globs: ["src/cli.rs", "src/config.rs", "src/main.rs"]
+alwaysApply: false
+---
+
+# CLI and Configuration Patterns
+
+## Command Line Interface
+- Use `argh` derive macros for argument parsing
+- Provide sensible defaults for all options
+- Use descriptive help text for all parameters
+- Group related configuration into structs
+
+```rust
+#[derive(FromArgs, Debug)]
+pub struct Args {
+    /// Description of the option
+    #[argh(option, default = "String::from(\"default_value\")")]
+    pub option_name: String,
+}
+```
+
+## Configuration Management
+- Use environment variables for sensitive configuration (API keys)
+- Never hardcode API keys in source code
+- Provide clear documentation for required environment variables
+- Use structured configuration objects
+
+## Model Configuration
+- Support multiple YOLO versions and scales
+- Handle different object types with appropriate model selection
+- Use proper error handling for unsupported combinations
+- Provide fallback configurations
+
+## Build Configuration
+- Use `build.rs` for platform-specific build configuration
+- Handle Apple-specific linking requirements
+- Use conditional compilation for platform-specific code
+
+## Error Handling in CLI
+- Provide clear error messages for missing dependencies
+- Validate file paths and extensions
+- Check for required external tools (ffmpeg)
+- Use proper exit codes for different error conditions

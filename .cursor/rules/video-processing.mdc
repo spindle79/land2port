@@ -1,0 +1,37 @@
+---
+description: Video processing patterns and YOLO model integration
+globs: ["src/video_processor*.rs", "src/ball_video_processor.rs", "src/crop.rs"]
+alwaysApply: false
+---
+
+# Video Processing Patterns
+
+## Video Processor Architecture
+- Use trait-based design with `VideoProcessor` trait for different processing strategies
+- Implement specialized processors for different object types (e.g., `BallVideoProcessor`)
+- Use composition to combine different smoothing strategies
+- Maintain state in processor structs for frame-to-frame consistency
+
+## YOLO Model Integration
+- Use `usls` library for YOLO model loading and inference
+- Support multiple model versions (v6, v8, v10, v11) and scales (n, s, m, l)
+- Handle different object types with appropriate model selection
+- Use proper error handling for model loading failures
+
+## Crop Calculation Patterns
+- Implement sophisticated crop logic based on object count and positioning
+- Support stacked crops for multiple objects
+- Use percentage-based similarity thresholds for crop smoothing
+- Handle edge cases (0 objects, 1 object, 2+ objects) with appropriate fallbacks
+
+## Performance Considerations
+- Process frames in batches when possible
+- Use appropriate data types (fp16, fp32) based on hardware
+- Support multiple backends (CPU, CUDA, CoreML)
+- Implement cut detection to optimize processing
+
+## State Management
+- Maintain previous crop information for smoothing
+- Track object detection history for prediction
+- Use cut detection to reset state when appropriate
+- Handle frame-to-frame consistency properly
