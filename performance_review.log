@@ -1,0 +1,15 @@
+- [ ] Avoid cloning large images and crop structures when references suffice (e.g., src/video_processor.rs lines 82 and 96; src/simple_smoothing_video_processor.rs lines 44-54; src/ball_video_processor.rs lines 55-110).
+  - Reason: Cloning duplicates potentially large buffers and structs, increasing CPU and memory usage.
+  - Expected effect: Lower memory consumption and faster frame processing.
+- [ ] In calculate_three_heads_crop (src/crop.rs lines 251-256), sort the list of head centers in place instead of cloning.
+  - Reason: Removing the extra clone cuts down on temporary allocations and copies.
+  - Expected effect: Slightly faster crop computations and reduced memory churn.
+- [ ] Compute head area statistics in a single pass in calculate_three_heads_crop instead of collecting into a temporary vector (src/crop.rs lines 244-247).
+  - Reason: Avoiding intermediate Vec creation reduces allocations and iterations.
+  - Expected effect: Minor speedup in crop calculations, especially with many heads.
+- [ ] Preallocate or reuse temporary vectors such as head_areas and remaining_heads in calculate_six_or_more_heads_crop (src/crop.rs lines 485 and 513-518).
+  - Reason: Preallocation prevents repeated reallocations during loops.
+  - Expected effect: Improved throughput when processing frames with many objects.
+- [ ] Replace objects.len() == 0 with objects.is_empty() in video_processor.rs line 95.
+  - Reason: is_empty avoids computing the length and clarifies intent.
+  - Expected effect: Minor micro-optimization and improved readability.
